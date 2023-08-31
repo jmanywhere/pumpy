@@ -1,66 +1,28 @@
-## Foundry
+# PUMPY
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+## Ecosystem
 
-Foundry consists of:
+### Token
 
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+PUMPY (`$PUMP`) is a token with a Maximum Supply of 1 trillion tokens.
 
-## Documentation
+#### Description
 
-https://book.getfoundry.sh/
+The token is a standard ERC20 token. Tokens will be burned on each buy of NFTs. The burning mechanism selected for the token is to send to the `0x00...00dEad` wallet
 
-## Usage
+#### Tokenomics
 
-### Build
+TBD
 
-```shell
-$ forge build
-```
+### NFT
 
-### Test
+Each NFT will unlock the ability to Stake itself along with `$PUMP` tokens. The NFT has a value associataed with the expected return on each deposit (see Staking). The price of each NFT will be in `$PUMP` and will have a value of `TBD`.
 
-```shell
-$ forge test
-```
+### Staking Pool
 
-### Format
+To stake `$PUMP`, users will need to also stake an NFT along with it.Only one NFT will be able to be staked per wallet. Depending on the `pumpRet` value of each NFT, users will be able to claim a daily amount of:
 
-```shell
-$ forge fmt
-```
+`pumpRet * PUMP_stakedAmount` where:
 
-### Gas Snapshots
-
-```shell
-$ forge snapshot
-```
-
-### Anvil
-
-```shell
-$ anvil
-```
-
-### Deploy
-
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
-```
+- `pumpRet`: percentage (ranging from 0.5% to 5%).
+- `PUMP_stakedAmount`: The amount of `$PUMP` staked alongside each NFT.
