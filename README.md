@@ -16,7 +16,22 @@ TBD
 
 ### NFT
 
-Each NFT will unlock the ability to Stake itself along with `$PUMP` tokens. The NFT has a value associataed with the expected return on each deposit (see Staking). The price of each NFT will be in `$PUMP` and will have a value of `TBD`.
+#### Supply
+
+Total NFT Supply: `650`.
+
+#### Utility
+
+Each NFT will unlock the ability to Stake itself along with `$PUMP` tokens. The NFT has a value associataed with the expected return on each deposit (see Staking). The price of each NFT will be in `$PUMP` of `TBD`. Each mint will assign an ROI value randomly to each token minted
+
+##### Distribution:
+
+- 0.5% ROI: `200`
+- 1% ROI: `200`
+- 2% ROI: `100`
+- 3% ROI: `70`
+- 4% ROI: `50`
+- 5% ROI: `30`
 
 ### Staking Pool
 
