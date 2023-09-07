@@ -12,3 +12,5 @@ docs/
 
 # Dotenv file
 .env
+shuffled_list.txt
+shuffle.py
