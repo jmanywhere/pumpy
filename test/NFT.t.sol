@@ -46,9 +46,15 @@ contract TestNFT is Test {
         ] = 0x1212336222143213122312152212152233411112111122214421116411325225;
         values[10] = 0x32;
         pumpy = new PUMPY();
-        nft = new PumpyNFT(values, address(this));
+        nft = new PumpyNFT(values, address(pumpy));
 
+        nft.setNFTPrice(1 ether);
         pumpy.transfer(user1, 100 ether);
+        pumpy.transfer(user2, 100 ether);
+        vm.prank(user1);
+        pumpy.approve(address(nft), 100 ether);
+        vm.prank(user2);
+        pumpy.approve(address(nft), 100 ether);
     }
 
     function test_mint() public {
