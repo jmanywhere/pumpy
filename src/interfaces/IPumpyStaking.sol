@@ -16,6 +16,18 @@ interface IPumpyStaking {
     // Events
     //-------------------------------------------------------------------------
 
+    event Deposit(
+        address indexed user,
+        uint256 indexed nftId,
+        uint256 tokenAmount
+    );
+    event Withdraw(address indexed user, uint256 indexed nftId);
+    event Claim(
+        address indexed user,
+        uint256 indexed nftId,
+        uint256 rewardAmount
+    );
+
     //-------------------------------------------------------------------------
     // Interface Functions
     //-------------------------------------------------------------------------
@@ -42,13 +54,6 @@ interface IPumpyStaking {
      * @dev Reset user position after withdraw
      */
     function withdraw() external;
-
-    /**
-     * @notice Returns the staking info for a user
-     * @param user address of the user
-     * @dev this is a mapping of user address to StakingInfo struct
-     */
-    function userInfo(address user) external view returns (StakingInfo memory);
 
     /**
      * @notice Returns the total amount of PUMPY tokens received by all users
