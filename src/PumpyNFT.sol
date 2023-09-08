@@ -136,10 +136,9 @@ contract PumpyNFT is ERC721, ReentrancyGuard, Ownable {
             uint roiId = finalVal & 0x0f;
             tokenType[id] = roiId;
             finalVal = finalVal >> 4;
-            _idPrompts[finalIndex] = finalVal;
-            if (_idPrompts[finalIndex] == 0) {
-                _idPrompts.pop();
-            }
+
+            if (finalVal == 0) _idPrompts.pop();
+            else _idPrompts[finalIndex] = finalVal;
         }
     }
 
