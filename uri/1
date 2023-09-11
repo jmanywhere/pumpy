@@ -1,0 +1,14 @@
+{
+    "name": "Chill Pumpy",
+    "image": "ipfs://bafybeifxj6btjk5z7ho4nqg7jre5mk3yzkuhhdcwhpnru7capvn6aobtqa/1.png",
+    "attributes": [
+        {
+            "trait_type": "Type",
+            "value": "Chill"
+        },
+        {
+            "trait_type": "Pump ROI",
+            "value": "0.5"
+        }
+    ]
+}

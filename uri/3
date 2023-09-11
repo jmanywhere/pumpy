@@ -1,0 +1,14 @@
+{
+    "name": "Awesome Pumpy",
+    "image": "ipfs://bafybeifxj6btjk5z7ho4nqg7jre5mk3yzkuhhdcwhpnru7capvn6aobtqa/3.png",
+    "attributes": [
+        {
+            "trait_type": "Type",
+            "value": "Awesome"
+        },
+        {
+            "trait_type": "Pump ROI",
+            "value": "2%"
+        }
+    ]
+}

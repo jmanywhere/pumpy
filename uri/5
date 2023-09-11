@@ -1,0 +1,14 @@
+{
+    "name": "Killer Pumpy",
+    "image": "ipfs://bafybeifxj6btjk5z7ho4nqg7jre5mk3yzkuhhdcwhpnru7capvn6aobtqa/5.png",
+    "attributes": [
+        {
+            "trait_type": "Type",
+            "value": "Killer"
+        },
+        {
+            "trait_type": "Pump ROI",
+            "value": "4%"
+        }
+    ]
+}

@@ -1,0 +1,14 @@
+{
+    "name": "Mega Pumpy",
+    "image": "ipfs://bafybeifxj6btjk5z7ho4nqg7jre5mk3yzkuhhdcwhpnru7capvn6aobtqa/4.png",
+    "attributes": [
+        {
+            "trait_type": "Type",
+            "value": "Mega"
+        },
+        {
+            "trait_type": "Pump ROI",
+            "value": "3%"
+        }
+    ]
+}

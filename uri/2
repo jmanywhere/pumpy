@@ -1,0 +1,14 @@
+{
+    "name": "Happy Pumpy",
+    "image": "ipfs://bafybeifxj6btjk5z7ho4nqg7jre5mk3yzkuhhdcwhpnru7capvn6aobtqa/2.png",
+    "attributes": [
+        {
+            "trait_type": "Type",
+            "value": "Happy"
+        },
+        {
+            "trait_type": "Pump ROI",
+            "value": "1%"
+        }
+    ]
+}
