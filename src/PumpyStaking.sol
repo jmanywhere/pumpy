@@ -23,7 +23,7 @@ contract PumpyStaking is IPumpyStaking {
         pumpNFT = IERC721(_pumpNFT);
     }
 
-    function stakePump(uint256 nftId, uint256 amount) external {
+    function deposit(uint256 nftId, uint256 amount) external {
         require(
             pumpNFT.ownerOf(nftId) == msg.sender,
             "Not the owner of the NFT"
@@ -52,7 +52,7 @@ contract PumpyStaking is IPumpyStaking {
         stakingStartTime[msg.sender] = block.timestamp; // reset staking start time for next claim
     }
 
-    function unstake() external {
+    function withdraw() external {
         require(stakedPumpAmount[msg.sender] > 0, "Not staking any tokens");
 
         // claimRewards(); // first claim any pending rewards
