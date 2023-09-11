@@ -36,6 +36,8 @@ contract PumpyStaking is IPumpyStaking {
         stakingStartTime[msg.sender] = block.timestamp;
 
         pumpNFT.transferFrom(msg.sender, address(this), nftId); // Transfer NFT to contract for staking
+
+        emit Deposit(msg.sender, nftId, amount);
     }
 
     function claimRewards() external {
@@ -50,6 +52,8 @@ contract PumpyStaking is IPumpyStaking {
         );
 
         stakingStartTime[msg.sender] = block.timestamp; // reset staking start time for next claim
+
+       emit Claim(msg.sender, nftId, rewardAmount);
     }
 
     function withdraw() external {
@@ -67,5 +71,7 @@ contract PumpyStaking is IPumpyStaking {
 
         // uint256 nftId = pumpNFT.tokenOfOwnerByIndex(msg.sender, 0);
         // pumpNFT.transferFrom(address(this), msg.sender, nftId); // return NFT to the owner
+
+        emit Withdraw(msg.sender, nftId);
     }
 }
