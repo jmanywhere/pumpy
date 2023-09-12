@@ -10,6 +10,7 @@ interface IPumpyStaking {
         uint256 lastAction;
         uint256 nftId;
         uint256 nftRoi;
+        uint256 totalRewards;
     }
 
     //-------------------------------------------------------------------------
