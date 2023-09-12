@@ -14,6 +14,16 @@ contract StakingTest is Test {
     address user1 = makeAddr("user1");
     address user2 = makeAddr("user2");
 
+    // function getUserDepositAmount(address user) external view returns (uint256) {
+    //     return staking.userInfo[user].depositAmount;
+    // }
+
+    function getDepositAmount(address user) public view returns (uint256) {
+        (uint256 depositAmount, , , , ) = staking.userInfo(user);
+        return depositAmount;
+    }
+
+
     function setUp() public {
 
         //
@@ -114,11 +124,14 @@ contract StakingTest is Test {
         assertEq(staking.totalStakes(), 300 ether);
         assertEq(staking.rewardPool(), 0 ether);
         assertEq(nft.ownerOf(12), address(staking));
-        assertEq(staking.stakedPumpyAmount(user1), 100 ether);
+
+        assertEq(getDepositAmount(user1), 100 ether);
+
         assertEq(nft.ownerOf(60), address(staking));
-        assertEq(staking.stakedPumpyAmount(user2), 200 ether);
         
-        // claimRewards
+        assertEq(getDepositAmount(user2), 200 ether);
+        
+        // claimRewards (single)
         vm.warp(block.timestamp + 3 days);
         assertEq(pumpy.balanceOf(user1), 388 ether);
         vm.prank(user1);
@@ -127,15 +140,15 @@ contract StakingTest is Test {
 
         assertEq(staking.totalRewardsGiven(), 15 ether);
         assertEq(pumpy.balanceOf(user1), 403 ether);
-        // assertEq(staking.rewardPool(), 30 ether);
+        //assertEq(staking.rewardPool(), 30 ether);
 
         // Compound claimRewards
         vm.prank(user2);
-        assertEq(staking.stakedPumpyAmount(user2), 200 ether);
-
+        assertEq(getDepositAmount(user2), 200 ether);
+        
         vm.prank(user2);
         staking.claimRewards(true);
-        assertEq(staking.stakedPumpyAmount(user2), 230 ether);
+        assertEq(getDepositAmount(user2), 230 ether);
         assertEq(staking.totalRewardsGiven(), 15 ether);
         // assertEq(staking.rewardPool(), 300 ether);
 
@@ -143,32 +156,20 @@ contract StakingTest is Test {
         vm.warp(block.timestamp + 2 days);
         vm.prank(user1);
         staking.withdraw();
-        assertEq(staking.stakedPumpyAmount(user1), 0 ether);
+        assertEq(getDepositAmount(user1), 0 ether);
+
 
         // assertEq(staking.rewardPool(), 300 ether);
         
         // Testing state variables
-        // assertEq(staking.totalStakes(), 100 ether);
+        assertEq(staking.totalStakes(), 230 ether);
 
-        // Test claimRewards
-        // vm.warp(block.timestamp + 1 days);
-        // assertEq(pumpy.balanceOf(user1), 96 ether);
-    
-
-       // staking.deposit(1, 50 ether);
-       // assertEq(staking.stakedPumpyAmount(user1), 50 ether);
-
-        //TBD
-        // value 0x1 = binary 0001;
-        // value 0x2 = binary 0010
-        // value 0x3 = binary 0011
-        // value 0xf = binary 1111
-        // 0x12 & 0xf = 0x02
-        // 0x12 >> 4 = 00010010 >> 4 = 00000001 = 0x01
-    }
-
-    function test_claimRewards() public {
-        vm.warp(block.timestamp + 1 days);
-        // assertEq(pumpy.balanceOf(user1), 96 ether);
+    //     //TBD
+    //     // value 0x1 = binary 0001;
+    //     // value 0x2 = binary 0010
+    //     // value 0x3 = binary 0011
+    //     // value 0xf = binary 1111
+    //     // 0x12 & 0xf = 0x02
+    //     // 0x12 >> 4 = 00010010 >> 4 = 00000001 = 0x01
     }
 }
