@@ -10,11 +10,18 @@ import "./PumpyNFT.sol";
 contract PumpyStaking is IPumpyStaking {
     PUMPY public pumpy;
     PumpyNFT public nft;
+
+    // State variables
+    uint256 public totalStakes;
+    uint256 public rewardPool;
+    uint256 public totalRewardsGiven;
+    // uint256 public lastUpdated; // Timestamp of the last time the reward pool was updated    
     
     mapping(address _user => StakingInfo) public userInfo;
     mapping(address => uint256) public stakedPumpyAmount;
     mapping(address => uint256) public stakingStartTime;
     mapping(uint256 => uint256) public nftToROI;
+    mapping(address => uint256) public lastClaim;
 
     constructor(address _pumpy, address _nft) {
         pumpy = PUMPY(_pumpy);
@@ -32,76 +39,67 @@ contract PumpyStaking is IPumpyStaking {
         userInfo[msg.sender].nftId = nftId;
         userInfo[msg.sender].lastAction = block.timestamp;
         stakedPumpyAmount[msg.sender] += amount;
+        totalStakes += amount;
 
+        lastClaim[msg.sender] = block.timestamp;
+        // If user makes a deposit on the same NFT, claim rewards and compound them?
         emit Deposit(msg.sender, nftId, amount);
     }
 
-    function claimRewards(bool claimAndCompound) external {
-        // TODO: Implement function logic
+    function claimRewards(bool isCompound) public {
+
+        uint256 nftId = userInfo[msg.sender].nftId;
+        uint256 pumpRet = nft.pumpRet(nft.tokenType(nftId));
+        uint256 timeElapsed = block.timestamp - lastClaim[msg.sender];
+        uint256 oneDay = 86400; // Number of seconds in a day
+        uint256 dailyRewards = (stakedPumpyAmount[msg.sender] * pumpRet) / 1000;
+        uint256 rewards = (dailyRewards * timeElapsed) / oneDay;
+
+        require(nftId != 0, "You are not staking any NFTs");
+        require(block.timestamp > lastClaim[msg.sender] + 1 days, "You can claim your rewards only once per day");
+        require(pumpy.balanceOf(address(this)) >= rewards, "There are not enough PUMPY tokens to pay rewards");
+
+        if (isCompound == true) {
+            stakedPumpyAmount[msg.sender] += rewards;
+            totalStakes += rewards;
+        } else {
+            pumpy.transfer(msg.sender, rewards);
+            // Update state variables
+            totalRewardsGiven += rewards;
+        }
+
+        rewardPool = totalStakes - rewards;
+        lastClaim[msg.sender] = block.timestamp;
+
+        emit Claim(msg.sender, nftId, rewards);
     }
 
     function withdraw() external {
-        // TODO: Implement function logic
-    }
+        require(stakedPumpyAmount[msg.sender] > 0, "You are not staking any tokens");
 
-    function totalRewardsGiven() external view returns (uint256) {
-        // TODO: Implement function logic
-        return 0;  // Placeholder return
-    }
+        claimRewards(false);
 
-    function totalStakes() external view returns (uint256) {
-        // TODO: Implement function logic
-        return 0;  // Placeholder return
-    }
+        uint256 amountToWithdraw = stakedPumpyAmount[msg.sender];
+        uint256 nftId = userInfo[msg.sender].nftId;
 
-    function estimatedEndTime() external view returns (uint256) {
-        // TODO: Implement function logic
-        return 0;  // Placeholder return
-    }
+        require(pumpy.transfer(msg.sender, amountToWithdraw), "There are not enough PUMPY tokens to pay rewards");
+        
+        totalStakes -= amountToWithdraw;
+        stakedPumpyAmount[msg.sender] = 0;
 
-    function rewardPool() external view returns (uint256) {
-        // TODO: Implement function logic
-        return 0;  // Placeholder return
-    }
-
-// Base code:
-
-
-/**
-    function claimRewards() external {
-        require(stakedPumpAmount[msg.sender] > 0, "Not staking any tokens");
-
-        uint256 elapsedTime = block.timestamp - stakingStartTime[msg.sender];
-        uint256 rewardAmount = stakedPumpAmount[msg.sender] * elapsedTime;
-
-        require(
-            pumpToken.transfer(msg.sender, rewardAmount),
-            "Failed to transfer rewards"
-        );
-
-        stakingStartTime[msg.sender] = block.timestamp; // reset staking start time for next claim
-
-       emit Claim(msg.sender, nftId, rewardAmount);
-    }
-
-    function withdraw() external {
-        require(stakedPumpAmount[msg.sender] > 0, "Not staking any tokens");
-
-        // claimRewards(); // first claim any pending rewards
-
-        uint256 amount = stakedPumpAmount[msg.sender];
-        stakedPumpAmount[msg.sender] = 0;
-
-        require(
-            pumpToken.transfer(msg.sender, amount),
-            "Failed to transfer tokens"
-        );
-
-        // uint256 nftId = pumpNFT.tokenOfOwnerByIndex(msg.sender, 0);
-        // pumpNFT.transferFrom(address(this), msg.sender, nftId); // return NFT to the owner
+        nft.transferFrom(address(this), msg.sender, nftId); // return NFT to the owner
 
         emit Withdraw(msg.sender, nftId);
-    } 
- */
+    }
+ 
+     function estimatedEndTime() external view returns (uint256) {
+        // TODO: Implement function logic
+        return 0;  // Placeholder return
+    }
+
+    /* QQ
+    1. If the user is already staking an NFT, can they make additional deposits on the same NFT?
+    2. Are rewards paid off the staked amount or the token balance?
+    */
 
 }

@@ -12,32 +12,154 @@ contract StakingTest is Test {
     PumpyStaking public staking;
 
     address user1 = makeAddr("user1");
-    address user2 = makeAddr("user2");    
+    address user2 = makeAddr("user2");
 
     function setUp() public {
-        pumpy = new PUMPY();
+
+        //
+        // VALUES 
+        //
+        uint[] memory values = new uint[](11);
+        values[
+            0
+        ] = 0x3224451213233112661131114655134522253121224131222111342223226233;
+        values[
+            1
+        ] = 0x5233133312614634224242214523522111221511156312341132553125123413;
+        values[
+            2
+        ] = 0x1322221312222111111155222213212412111432221512441222111111311312;
+        values[
+            3
+        ] = 0x2361131511141313362221326211126223453261211242133211154514111632;
+        values[
+            4
+        ] = 0x1523241162532341223425222122221213161122443415432412251112222533;
+        values[
+            5
+        ] = 0x5243412115416441112623231412213143311642121316221222311423432162;
+        values[
+            6
+        ] = 0x4215111342412122111132344212365111163422222223251311141131243622;
+        values[
+            7
+        ] = 0x6254113244341121312321313122351125425223541212112245224522516161;
+        values[
+            8
+        ] = 0x1212521226145312142212212211111524322232234533443514136254133433;
+        values[
+            9
+        ] = 0x1212336222143213122312152212152233411112111122214421116411325225;
+        values[10] = 0x32;
+        // END VALUES
+        // Old values
         uint256[] memory ids = new uint256[](1);
         ids[0] = 0x112233;
-        nft = new PumpyNFT(ids, address(pumpy));
-        staking = new PumpyStaking(address(pumpy), address(nft));
 
+        // Instantiate contracts
+        pumpy = new PUMPY();
+        nft = new PumpyNFT(values, address(pumpy));
+        staking = new PumpyStaking(address(pumpy), address(nft));
+        
         nft.setNFTPrice(1 ether);
-        pumpy.transfer(user1, 100 ether);
-        pumpy.transfer(user2, 200 ether);
+        pumpy.transfer(user1, 500 ether);
+        pumpy.transfer(user2, 500 ether);
         vm.prank(user1);
-        pumpy.approve(address(nft), 100 ether);
+        pumpy.approve(address(nft), 500 ether);
         vm.prank(user2);
-        pumpy.approve(address(nft), 200 ether);        
+        pumpy.approve(address(nft), 500 ether);        
+
+        vm.prank(user1);
+        nft.mint(12);        
+        vm.prank(user1);
+        nft.setApprovalForAll(address(staking), true);
+        vm.prank(user2);
+        nft.mint(48);
+        vm.prank(user1);
+        nft.setApprovalForAll(address(staking), true);
+        vm.prank(user2);
+        nft.setApprovalForAll(address(staking), true);        
+        // vm.prank(user1);
+        // nft.approve(address(staking), 2);
+        vm.prank(user1);
+        pumpy.approve(address(staking), 500 ether);
+        vm.prank(user2);
+        pumpy.approve(address(staking), 500 ether);
+        // vm.prank(user1);
+        // staking.deposit(1, 2 ether);
+        
     }
 
+    // Will refactor
     function test_deposit() public {
+
+        assertEq(nft.ownerOf(1), user1);
+        assertEq(nft.ownerOf(2), user1);
+        assertEq(nft.balanceOf(user1), 12);
+        assertEq(nft.totalSupply(), 60);
+        assertEq(nft.tokenType(1), 2);
+        assertEq(nft.tokenType(2), 3);
+        assertEq(nft.tokenType(12), 6);
+        assertEq(nft.tokenType(60), 6);        
+
+        assertEq(staking.totalStakes(), 0 ether);
+        assertEq(staking.rewardPool(), 0 ether);
+
+        vm.prank(user1);
+        staking.deposit(12, 100 ether);
+        vm.prank(user2);
+        staking.deposit(60, 200 ether);        
+        assertEq(staking.totalStakes(), 300 ether);
+        assertEq(staking.rewardPool(), 0 ether);
+        
+        assertEq(nft.ownerOf(12), address(staking));
+        assertEq(staking.stakedPumpyAmount(user1), 100 ether);
+        assertEq(nft.ownerOf(60), address(staking));
+        assertEq(staking.stakedPumpyAmount(user2), 200 ether);        
+        
+        // Testing claimRewards
+        vm.warp(block.timestamp + 3 days);
+        uint256 initialBalance = pumpy.balanceOf(user1);
+        assertEq(pumpy.balanceOf(user1), 388 ether);
+        vm.prank(user1); 
+        staking.claimRewards(false);
+        // vm.prank(user1); staking.claimRewards(false); // verify cannot claim twice in same day
+        assertEq(staking.rewardPool(), 285 ether);
+        assertEq(staking.totalRewardsGiven(), 15 ether);
+
+        vm.prank(user1);
+        uint256 newBalance = pumpy.balanceOf(user1);
+        assert(newBalance > initialBalance);
+
+        // Compound claimRewards
+        vm.prank(user2); 
+        staking.claimRewards(true);
+        assertEq(staking.stakedPumpyAmount(user2), 230 ether);
+        assertEq(staking.rewardPool(), 300 ether);
+        assertEq(staking.totalRewardsGiven(), 15 ether);
+        
+        // Testing state variables
+        // assertEq(staking.totalStakes(), 100 ether);
+
+        // Test claimRewards
+        // vm.warp(block.timestamp + 1 days);
+        // assertEq(pumpy.balanceOf(user1), 96 ether);
+    
+
+       // staking.deposit(1, 50 ether);
+       // assertEq(staking.stakedPumpyAmount(user1), 50 ether);
+
         //TBD
-        // value 0x1 = binary 0001
+        // value 0x1 = binary 0001;
         // value 0x2 = binary 0010
         // value 0x3 = binary 0011
         // value 0xf = binary 1111
         // 0x12 & 0xf = 0x02
         // 0x12 >> 4 = 00010010 >> 4 = 00000001 = 0x01
+    }
 
+    function test_claimRewards() public {
+        vm.warp(block.timestamp + 1 days);
+        // assertEq(pumpy.balanceOf(user1), 96 ether);
     }
 }
