@@ -12,7 +12,6 @@ contract PumpyStaking is IPumpyStaking {
     PumpyNFT public nft;
 
     // State variables
-    uint256 public rewardPool;
     uint256 public totalStakes;
     uint256 public totalRewardsGiven;
     // uint256 public lastUpdated; // Timestamp of the last time the reward pool was updated    
@@ -59,20 +58,19 @@ contract PumpyStaking is IPumpyStaking {
 
         require(nftId != 0, "You are not staking any NFTs");
         require(block.timestamp > userInfo[msg.sender].lastAction + 1 days, "You can claim your rewards only once per day");
-        require(pumpy.balanceOf(address(this)) >= rewards, "There are not enough PUMPY tokens to pay rewards");
+        require(rewardPool() >= rewards, "There are not enough PUMPY tokens to pay rewards");
 
         if (isCompound == true) {
-            pumpy.transferFrom(msg.sender, address(this), rewards);
             userInfo[msg.sender].depositAmount += rewards;
             totalStakes += rewards;
 
         } else {
             pumpy.transfer(msg.sender, rewards);
             userInfo[msg.sender].totalRewards += rewards;
+            
         }
 
         totalRewardsGiven += rewards;
-        rewardPool = totalStakes - rewards;
         userInfo[msg.sender].lastAction = block.timestamp;
 
         emit Claim(msg.sender, nftId, rewards);
@@ -102,6 +100,10 @@ contract PumpyStaking is IPumpyStaking {
     function estimatedEndTime() external pure returns (uint256) {
         // TODO: Implement function logic
         return 0;  // Placeholder return
+    }
+
+    function rewardPool() public view returns (uint256) {
+        return pumpy.balanceOf(address(this)) - totalStakes;
     }
 
     /* QQ

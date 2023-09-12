@@ -71,6 +71,8 @@ contract StakingTest is Test {
         pumpy = new PUMPY();
         nft = new PumpyNFT(values, address(pumpy));
         staking = new PumpyStaking(address(pumpy), address(nft));
+
+        pumpy.transfer(address(staking), 1_000_000 ether);
         
         nft.setNFTPrice(1 ether);
         pumpy.transfer(user1, 500 ether);
@@ -123,7 +125,7 @@ contract StakingTest is Test {
         assertEq(nft.tokenType(60), 6);        
 
         assertEq(staking.totalStakes(), 0 ether);
-        assertEq(staking.rewardPool(), 0 ether);
+        assertEq(staking.rewardPool(), 1_000_000 ether);
 
         // Deposit
         vm.prank(user1);
@@ -134,7 +136,7 @@ contract StakingTest is Test {
         staking.deposit(61, 50 ether);        
 
         assertEq(staking.totalStakes(), 350 ether);
-        assertEq(staking.rewardPool(), 0 ether);
+        assertEq(staking.rewardPool(), 1_000_000 ether);
         assertEq(nft.ownerOf(12), address(staking));
 
         assertEq(getDepositAmount(user1), 100 ether);
@@ -148,18 +150,18 @@ contract StakingTest is Test {
 
         // Second deposit by user3
         vm.prank(user3);
-        staking.deposit(61, 50 ether); 
+        staking.deposit(61, 50 ether); // claims with compound 3 rewards
         // assertEq(getDepositAmount(user3), 100 ether);
         
         // claimRewards (single)
         assertEq(pumpy.balanceOf(user1), 388 ether);
         vm.prank(user1);
-        staking.claimRewards(false);
+        staking.claimRewards(false); // Claims 15 rewards
         // vm.prank(user1); staking.claimRewards(false); // verify cannot claim twice in same day
 
         assertEq(staking.totalRewardsGiven(), 18 ether);
         assertEq(pumpy.balanceOf(user1), 403 ether);
-        //assertEq(staking.rewardPool(), 30 ether);
+        assertEq(staking.rewardPool(),  999_982 ether);
 
         // Compound claimRewards
         vm.prank(user2);
