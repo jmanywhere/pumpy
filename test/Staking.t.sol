@@ -100,7 +100,7 @@ contract StakingTest is Test {
         
     }
 
-    // Will refactor
+    // WILL REFACTOR INTO MULTIPLE FUNCTIONS
     function test_deposit() public {
 
         assertEq(nft.ownerOf(1), user1);
