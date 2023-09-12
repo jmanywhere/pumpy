@@ -4,6 +4,8 @@ pragma solidity 0.8.21;
 import {IERC20} from "openzeppelin/token/ERC20/IERC20.sol";
 import {IERC721} from "openzeppelin/token/ERC721/IERC721.sol";
 import "./interfaces/IPumpyStaking.sol";
+import "./Pumpy.sol";
+import "./PumpyNFT.sol";
 
 contract PumpyStaking is IPumpyStaking {
     PUMPY public pumpy;
@@ -13,16 +15,16 @@ contract PumpyStaking is IPumpyStaking {
     mapping(address => uint256) public stakedPumpyAmount;
     mapping(address => uint256) public stakingStartTime;
     mapping(uint256 => uint256) public nftToROI;
-    
-    constructor(address _pumpToken, address _pumpNFT) {
-        pumpToken = IERC20(_pumpToken);
-        pumpNFT = IERC721(_pumpNFT);
+
+    constructor(address _pumpy, address _nft) {
+        pumpy = PUMPY(_pumpy);
+        nft = PumpyNFT(_nft);
     }
 
     function deposit(uint256 nftId, uint256 amount) external {
         require(amount > 0, "You need to stake at least some tokens");
         require(nft.ownerOf(nftId) == msg.sender, "You are not the owner of the NFT");
-        require(stakingInfo[_user].nftId == 0, "You are already staking an NFT");
+        require(userInfo[msg.sender].nftId == 0, "You are already staking an NFT");
 
         pumpy.transferFrom(msg.sender, address(this), amount);
         nft.transferFrom(msg.sender, address(this), nftId);
@@ -33,6 +35,37 @@ contract PumpyStaking is IPumpyStaking {
 
         emit Deposit(msg.sender, nftId, amount);
     }
+
+    function claimRewards(bool claimAndCompound) external {
+        // TODO: Implement function logic
+    }
+
+    function withdraw() external {
+        // TODO: Implement function logic
+    }
+
+    function totalRewardsGiven() external view returns (uint256) {
+        // TODO: Implement function logic
+        return 0;  // Placeholder return
+    }
+
+    function totalStakes() external view returns (uint256) {
+        // TODO: Implement function logic
+        return 0;  // Placeholder return
+    }
+
+    function estimatedEndTime() external view returns (uint256) {
+        // TODO: Implement function logic
+        return 0;  // Placeholder return
+    }
+
+    function rewardPool() external view returns (uint256) {
+        // TODO: Implement function logic
+        return 0;  // Placeholder return
+    }
+
+// Base code:
+
 
 /**
     function claimRewards() external {
