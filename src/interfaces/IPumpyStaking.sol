@@ -10,6 +10,7 @@ interface IPumpyStaking {
         uint256 lastAction;
         uint256 nftId;
         uint256 nftRoi;
+        uint256 totalRewards;
     }
 
     //-------------------------------------------------------------------------
@@ -44,9 +45,9 @@ interface IPumpyStaking {
 
     /**
      * @notice Claims rewards for the caller and optionally compounds them
-     * @param claimAndCompound if true, rewards are claimed and added to the stake Deposit
+     * @param isCompound if true, rewards are claimed and added to the stake Deposit
      */
-    function claimRewards(bool claimAndCompound) external;
+    function claimRewards(bool isCompound) external;
 
     /**
      * @notice Unstakes PUMPY tokens and returns the NFT to the caller
