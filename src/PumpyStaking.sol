@@ -60,15 +60,17 @@ contract PumpyStaking is IPumpyStaking {
         require(pumpy.balanceOf(address(this)) >= rewards, "There are not enough PUMPY tokens to pay rewards");
 
         if (isCompound == true) {
+            pumpy.transferFrom(msg.sender, address(this), rewards);
             stakedPumpyAmount[msg.sender] += rewards;
             totalStakes += rewards;
+
         } else {
             pumpy.transfer(msg.sender, rewards);
             // Update state variables
             totalRewardsGiven += rewards;
         }
 
-        rewardPool = totalStakes - rewards;
+        // rewardPool = pumpy.balanceOf(address(this)) - totalStakes;
         lastClaim[msg.sender] = block.timestamp;
 
         emit Claim(msg.sender, nftId, rewards);
@@ -77,6 +79,7 @@ contract PumpyStaking is IPumpyStaking {
     function withdraw() external {
         require(stakedPumpyAmount[msg.sender] > 0, "You are not staking any tokens");
 
+        // Can they call the withdraw function on the same day they previously claimed rewards?
         claimRewards(false);
 
         uint256 amountToWithdraw = stakedPumpyAmount[msg.sender];
