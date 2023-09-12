@@ -28,21 +28,23 @@ contract PumpyStaking is IPumpyStaking {
 
     function deposit(uint256 nftId, uint256 amount) external {
         require(amount > 0, "You need to stake at least some tokens");
-        require(nft.ownerOf(nftId) == msg.sender, "You are not the owner of the NFT");
-        require(userInfo[msg.sender].nftId == 0, "You are already staking an NFT");
+        
+        if (userInfo[msg.sender].nftId == 0) {
+            require(nft.ownerOf(nftId) == msg.sender, "You are not the owner of the NFT");
+            nft.transferFrom(msg.sender, address(this), nftId);
+        } else {
+            require(userInfo[msg.sender].nftId == nftId, "You need to stake the same NFT");
+            // @jmanywhere is it going to be always compound for multiple deposits ?
+            claimRewards(true);
+        }
 
+        // Transfer toknes to the stake contract
         pumpy.transferFrom(msg.sender, address(this), amount);
-        nft.transferFrom(msg.sender, address(this), nftId);
 
         userInfo[msg.sender].nftId = nftId;
         userInfo[msg.sender].lastAction = block.timestamp;
         userInfo[msg.sender].depositAmount += amount;
         totalStakes += amount;
-
-        // lastClaim[msg.sender] = block.timestamp; This is not needed
-
-        // @TODO
-        // If user makes a deposit on the same NFT, claim rewards and compound them?
 
         emit Deposit(msg.sender, nftId, amount);
     }
@@ -60,17 +62,16 @@ contract PumpyStaking is IPumpyStaking {
         require(pumpy.balanceOf(address(this)) >= rewards, "There are not enough PUMPY tokens to pay rewards");
 
         if (isCompound == true) {
-            userInfo[msg.sender].depositAmount += rewards;
             pumpy.transferFrom(msg.sender, address(this), rewards);
+            userInfo[msg.sender].depositAmount += rewards;
             totalStakes += rewards;
 
         } else {
             pumpy.transfer(msg.sender, rewards);
-            // Update state variables
             userInfo[msg.sender].totalRewards += rewards;
-            totalRewardsGiven += rewards;
         }
 
+        totalRewardsGiven += rewards;
         rewardPool = totalStakes - rewards;
         userInfo[msg.sender].lastAction = block.timestamp;
 
@@ -86,16 +87,18 @@ contract PumpyStaking is IPumpyStaking {
         uint256 amountToWithdraw = userInfo[msg.sender].depositAmount;
         uint256 nftId = userInfo[msg.sender].nftId;
 
-        require(pumpy.transfer(msg.sender, amountToWithdraw), "There are not enough PUMPY tokens to pay rewards");
-        
-        totalStakes -= amountToWithdraw;
+        // Transfert tokens to the owner
+        pumpy.transfer(msg.sender, amountToWithdraw);
         userInfo[msg.sender].depositAmount = 0;
+        totalStakes -= amountToWithdraw;
 
-        nft.transferFrom(address(this), msg.sender, nftId); // return NFT to the owner
+        // Transfert NFT to the owner
+        nft.transferFrom(address(this), msg.sender, nftId);
+        userInfo[msg.sender].nftId = 0;
 
         emit Withdraw(msg.sender, nftId);
     }
- 
+
     function estimatedEndTime() external pure returns (uint256) {
         // TODO: Implement function logic
         return 0;  // Placeholder return
@@ -105,5 +108,4 @@ contract PumpyStaking is IPumpyStaking {
     1. If the user is already staking an NFT, can they make additional deposits on the same NFT?
     2. Are rewards paid off the staked amount or the token balance?
     */
-
 }

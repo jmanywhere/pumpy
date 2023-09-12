@@ -13,6 +13,7 @@ contract StakingTest is Test {
 
     address user1 = makeAddr("user1");
     address user2 = makeAddr("user2");
+    address user3 = makeAddr("user3");
 
     // function getUserDepositAmount(address user) external view returns (uint256) {
     //     return staking.userInfo[user].depositAmount;
@@ -74,10 +75,13 @@ contract StakingTest is Test {
         nft.setNFTPrice(1 ether);
         pumpy.transfer(user1, 500 ether);
         pumpy.transfer(user2, 500 ether);
+        pumpy.transfer(user3, 500 ether);        
         vm.prank(user1);
         pumpy.approve(address(nft), 500 ether);
         vm.prank(user2);
-        pumpy.approve(address(nft), 500 ether);        
+        pumpy.approve(address(nft), 500 ether);       
+        vm.prank(user3);
+        pumpy.approve(address(nft), 500 ether);  
 
         vm.prank(user1);
         nft.mint(12);        
@@ -85,16 +89,22 @@ contract StakingTest is Test {
         nft.setApprovalForAll(address(staking), true);
         vm.prank(user2);
         nft.mint(48);
+        vm.prank(user3);
+        nft.mint(6);        
         vm.prank(user1);
         nft.setApprovalForAll(address(staking), true);
         vm.prank(user2);
         nft.setApprovalForAll(address(staking), true);        
+        vm.prank(user3);
+        nft.setApprovalForAll(address(staking), true);              
         // vm.prank(user1);
         // nft.approve(address(staking), 2);
         vm.prank(user1);
         pumpy.approve(address(staking), 500 ether);
         vm.prank(user2);
         pumpy.approve(address(staking), 500 ether);
+        vm.prank(user3);
+        pumpy.approve(address(staking), 500 ether);        
         // vm.prank(user1);
         // staking.deposit(1, 2 ether);
         
@@ -106,7 +116,7 @@ contract StakingTest is Test {
         assertEq(nft.ownerOf(1), user1);
         assertEq(nft.ownerOf(2), user1);
         assertEq(nft.balanceOf(user1), 12);
-        assertEq(nft.totalSupply(), 60);
+        assertEq(nft.totalSupply(), 66);
         assertEq(nft.tokenType(1), 2);
         assertEq(nft.tokenType(2), 3);
         assertEq(nft.tokenType(12), 6);
@@ -120,8 +130,10 @@ contract StakingTest is Test {
         staking.deposit(12, 100 ether);
         vm.prank(user2);
         staking.deposit(60, 200 ether);
+        vm.prank(user3);
+        staking.deposit(61, 50 ether);        
 
-        assertEq(staking.totalStakes(), 300 ether);
+        assertEq(staking.totalStakes(), 350 ether);
         assertEq(staking.rewardPool(), 0 ether);
         assertEq(nft.ownerOf(12), address(staking));
 
@@ -131,14 +143,21 @@ contract StakingTest is Test {
         
         assertEq(getDepositAmount(user2), 200 ether);
         
-        // claimRewards (single)
+        // 3 days later...
         vm.warp(block.timestamp + 3 days);
+
+        // Second deposit by user3
+        vm.prank(user3);
+        staking.deposit(61, 50 ether); 
+        // assertEq(getDepositAmount(user3), 100 ether);
+        
+        // claimRewards (single)
         assertEq(pumpy.balanceOf(user1), 388 ether);
         vm.prank(user1);
         staking.claimRewards(false);
         // vm.prank(user1); staking.claimRewards(false); // verify cannot claim twice in same day
 
-        assertEq(staking.totalRewardsGiven(), 15 ether);
+        assertEq(staking.totalRewardsGiven(), 18 ether);
         assertEq(pumpy.balanceOf(user1), 403 ether);
         //assertEq(staking.rewardPool(), 30 ether);
 
@@ -149,7 +168,7 @@ contract StakingTest is Test {
         vm.prank(user2);
         staking.claimRewards(true);
         assertEq(getDepositAmount(user2), 230 ether);
-        assertEq(staking.totalRewardsGiven(), 15 ether);
+        assertEq(staking.totalRewardsGiven(), 48 ether);
         // assertEq(staking.rewardPool(), 300 ether);
 
         // Test withdraw
@@ -162,7 +181,7 @@ contract StakingTest is Test {
         // assertEq(staking.rewardPool(), 300 ether);
         
         // Testing state variables
-        assertEq(staking.totalStakes(), 230 ether);
+        assertEq(staking.totalStakes(), 333 ether);
 
     //     //TBD
     //     // value 0x1 = binary 0001;
