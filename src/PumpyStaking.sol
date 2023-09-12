@@ -8,7 +8,7 @@ import "./interfaces/IPumpyStaking.sol";
 contract PumpyStaking is IPumpyStaking {
     IERC20 public pumpToken;
     IERC721 public pumpNFT;
-
+    
     /*
      * user address of the user
      * returns struct StakingInfo
@@ -24,11 +24,9 @@ contract PumpyStaking is IPumpyStaking {
     }
 
     function deposit(uint256 nftId, uint256 amount) external {
-        require(
-            pumpNFT.ownerOf(nftId) == msg.sender,
-            "Not the owner of the NFT"
-        );
-        require(stakedPumpAmount[msg.sender] == 0, "Already staking");
+        require(amount > 0, "You need to stake at least some tokens");
+        require(pumpNFT.ownerOf(nftId) == msg.sender, "You are not the owner of the NFT");
+        require(stakingInfo[_user].nftId == 0, "You are already staking an NFT");
 
         pumpToken.transferFrom(msg.sender, address(this), amount);
 
