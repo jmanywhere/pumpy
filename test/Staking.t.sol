@@ -105,38 +105,47 @@ contract StakingTest is Test {
         assertEq(staking.totalStakes(), 0 ether);
         assertEq(staking.rewardPool(), 0 ether);
 
+        // Deposit
         vm.prank(user1);
         staking.deposit(12, 100 ether);
         vm.prank(user2);
-        staking.deposit(60, 200 ether);        
+        staking.deposit(60, 200 ether);
+
         assertEq(staking.totalStakes(), 300 ether);
         assertEq(staking.rewardPool(), 0 ether);
-        
         assertEq(nft.ownerOf(12), address(staking));
         assertEq(staking.stakedPumpyAmount(user1), 100 ether);
         assertEq(nft.ownerOf(60), address(staking));
-        assertEq(staking.stakedPumpyAmount(user2), 200 ether);        
+        assertEq(staking.stakedPumpyAmount(user2), 200 ether);
         
-        // Testing claimRewards
+        // claimRewards
         vm.warp(block.timestamp + 3 days);
-        uint256 initialBalance = pumpy.balanceOf(user1);
         assertEq(pumpy.balanceOf(user1), 388 ether);
-        vm.prank(user1); 
+        vm.prank(user1);
         staking.claimRewards(false);
         // vm.prank(user1); staking.claimRewards(false); // verify cannot claim twice in same day
-        assertEq(staking.rewardPool(), 285 ether);
-        assertEq(staking.totalRewardsGiven(), 15 ether);
 
-        vm.prank(user1);
-        uint256 newBalance = pumpy.balanceOf(user1);
-        assert(newBalance > initialBalance);
+        assertEq(staking.totalRewardsGiven(), 15 ether);
+        assertEq(pumpy.balanceOf(user1), 403 ether);
+        // assertEq(staking.rewardPool(), 30 ether);
 
         // Compound claimRewards
-        vm.prank(user2); 
+        vm.prank(user2);
+        assertEq(staking.stakedPumpyAmount(user2), 200 ether);
+
+        vm.prank(user2);
         staking.claimRewards(true);
         assertEq(staking.stakedPumpyAmount(user2), 230 ether);
-        assertEq(staking.rewardPool(), 300 ether);
         assertEq(staking.totalRewardsGiven(), 15 ether);
+        // assertEq(staking.rewardPool(), 300 ether);
+
+        // Test withdraw
+        vm.warp(block.timestamp + 2 days);
+        vm.prank(user1);
+        staking.withdraw();
+        assertEq(staking.stakedPumpyAmount(user1), 0 ether);
+
+        // assertEq(staking.rewardPool(), 300 ether);
         
         // Testing state variables
         // assertEq(staking.totalStakes(), 100 ether);

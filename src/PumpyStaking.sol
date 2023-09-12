@@ -61,7 +61,9 @@ contract PumpyStaking is IPumpyStaking {
 
         if (isCompound == true) {
             userInfo[msg.sender].depositAmount += rewards;
+            pumpy.transferFrom(msg.sender, address(this), rewards);
             totalStakes += rewards;
+
         } else {
             pumpy.transfer(msg.sender, rewards);
             // Update state variables
@@ -70,7 +72,6 @@ contract PumpyStaking is IPumpyStaking {
         }
 
         rewardPool = totalStakes - rewards;
-
         userInfo[msg.sender].lastAction = block.timestamp;
 
         emit Claim(msg.sender, nftId, rewards);
@@ -79,6 +80,7 @@ contract PumpyStaking is IPumpyStaking {
     function withdraw() external {
         require(userInfo[msg.sender].depositAmount > 0, "You are not staking any tokens");
 
+        // Can they call the withdraw function on the same day they previously claimed rewards?
         claimRewards(false);
 
         uint256 amountToWithdraw = userInfo[msg.sender].depositAmount;
