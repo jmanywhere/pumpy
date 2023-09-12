@@ -6,18 +6,14 @@ import {IERC721} from "openzeppelin/token/ERC721/IERC721.sol";
 import "./interfaces/IPumpyStaking.sol";
 
 contract PumpyStaking is IPumpyStaking {
-    IERC20 public pumpToken;
-    IERC721 public pumpNFT;
+    PUMPY public pumpy;
+    PumpyNFT public nft;
     
-    /*
-     * user address of the user
-     * returns struct StakingInfo
-     */
     mapping(address _user => StakingInfo) public userInfo;
-    mapping(address => uint256) public stakedPumpAmount;
+    mapping(address => uint256) public stakedPumpyAmount;
     mapping(address => uint256) public stakingStartTime;
     mapping(uint256 => uint256) public nftToROI;
-
+    
     constructor(address _pumpToken, address _pumpNFT) {
         pumpToken = IERC20(_pumpToken);
         pumpNFT = IERC721(_pumpNFT);
@@ -25,19 +21,20 @@ contract PumpyStaking is IPumpyStaking {
 
     function deposit(uint256 nftId, uint256 amount) external {
         require(amount > 0, "You need to stake at least some tokens");
-        require(pumpNFT.ownerOf(nftId) == msg.sender, "You are not the owner of the NFT");
+        require(nft.ownerOf(nftId) == msg.sender, "You are not the owner of the NFT");
         require(stakingInfo[_user].nftId == 0, "You are already staking an NFT");
 
-        pumpToken.transferFrom(msg.sender, address(this), amount);
+        pumpy.transferFrom(msg.sender, address(this), amount);
+        nft.transferFrom(msg.sender, address(this), nftId);
 
-        stakedPumpAmount[msg.sender] = amount;
-        stakingStartTime[msg.sender] = block.timestamp;
-
-        pumpNFT.transferFrom(msg.sender, address(this), nftId); // Transfer NFT to contract for staking
+        userInfo[msg.sender].nftId = nftId;
+        userInfo[msg.sender].lastAction = block.timestamp;
+        stakedPumpyAmount[msg.sender] += amount;
 
         emit Deposit(msg.sender, nftId, amount);
     }
 
+/**
     function claimRewards() external {
         require(stakedPumpAmount[msg.sender] > 0, "Not staking any tokens");
 
@@ -71,5 +68,7 @@ contract PumpyStaking is IPumpyStaking {
         // pumpNFT.transferFrom(address(this), msg.sender, nftId); // return NFT to the owner
 
         emit Withdraw(msg.sender, nftId);
-    }
+    } 
+ */
+
 }
