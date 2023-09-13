@@ -46,6 +46,7 @@ interface IPumpyStaking {
     error ClaimStakeNFT();
     error ClaimLastAction();
     error ClaimRewardPool(uint256 rewardPool, uint256 rewards);
+    error WithdrawTokensAmount();
 
     //-------------------------------------------------------------------------
     // Interface Functions

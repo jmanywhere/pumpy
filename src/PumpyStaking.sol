@@ -92,24 +92,24 @@ contract PumpyStaking is IPumpyStaking, IERC721Receiver, ReentrancyGuard {
     }
 
     function withdraw() external {
-        require(userInfo[msg.sender].depositAmount > 0, "You are not staking any tokens");
+        if (userInfo[msg.sender].depositAmount <= 0)
+            revert WithdrawTokensAmount();
 
-        // Can they call the withdraw function on the same day they previously claimed rewards?
         claimRewards(false);
 
         uint256 amountToWithdraw = userInfo[msg.sender].depositAmount;
         uint256 nftId = userInfo[msg.sender].nftId;
 
-        // Transfert tokens to the owner
-        pumpy.transfer(msg.sender, amountToWithdraw);
+        // Update State
         userInfo[msg.sender].depositAmount = 0;
+        userInfo[msg.sender].nftId = 0;
         totalStakes -= amountToWithdraw;
 
-        // Transfert NFT to the owner
-        nft.transferFrom(address(this), msg.sender, nftId);
-        userInfo[msg.sender].nftId = 0;
-
         emit Withdraw(msg.sender, nftId);
+
+        // Transfers
+        pumpy.transfer(msg.sender, amountToWithdraw);
+        nft.transferFrom(address(this), msg.sender, nftId);
     }
 
     function estimatedEndTime() external pure returns (uint256) {
@@ -120,9 +120,4 @@ contract PumpyStaking is IPumpyStaking, IERC721Receiver, ReentrancyGuard {
     function rewardPool() public view returns (uint256) {
         return pumpy.balanceOf(address(this)) - totalStakes;
     }
-
-    /* QQ
-    1. If the user is already staking an NFT, can they make additional deposits on the same NFT?
-    2. Are rewards paid off the staked amount or the token balance?
-    */
 }
