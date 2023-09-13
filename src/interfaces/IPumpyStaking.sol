@@ -32,7 +32,8 @@ interface IPumpyStaking {
     event Claim(
         address indexed user,
         uint256 indexed nftId,
-        uint256 rewardAmount
+        uint256 rewardAmount,
+        bool compound 
     );
 
     //-------------------------------------------------------------------------
@@ -42,6 +43,9 @@ interface IPumpyStaking {
     error DepositAmount();
     error DepositOwnerNFT(address owner, address sender);
     error DepositSameNFT();
+    error ClaimStakeNFT();
+    error ClaimLastAction();
+    error ClaimRewardPool(uint256 rewardPool, uint256 rewards);
 
     //-------------------------------------------------------------------------
     // Interface Functions

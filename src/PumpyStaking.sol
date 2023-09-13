@@ -19,8 +19,7 @@ contract PumpyStaking is IPumpyStaking, IERC721Receiver, ReentrancyGuard {
     // uint256 public lastUpdated; // Timestamp of the last time the reward pool was updated    
     
     mapping(address _user => StakingInfo) public userInfo;
-    //mapping(address => uint256) public stakedPumpyAmount;
-    //mapping(address => uint256) public lastClaim;
+    uint256 private constant _BASE_PERCENT = 1000;
 
     constructor(address _pumpy, address _nft) {
         pumpy = PUMPY(_pumpy);
@@ -63,31 +62,33 @@ contract PumpyStaking is IPumpyStaking, IERC721Receiver, ReentrancyGuard {
     }
 
     function claimRewards(bool isCompound) public {
-
         uint256 nftId = userInfo[msg.sender].nftId;
         uint256 pumpRet = nft.pumpRet(nft.tokenType(nftId));
         uint256 timeElapsed = block.timestamp - userInfo[msg.sender].lastAction;
-        uint256 dailyRewards = (userInfo[msg.sender].depositAmount * pumpRet) / 1000;
-        uint256 rewards = (dailyRewards * timeElapsed) / 86400/*oneDay*/ ;
+        uint256 dailyRewards = (userInfo[msg.sender].depositAmount * pumpRet) / _BASE_PERCENT;
+        uint256 rewards = (dailyRewards * timeElapsed) / 1 days;
 
-        require(nftId != 0, "You are not staking any NFTs");
-        require(block.timestamp > userInfo[msg.sender].lastAction + 1 days, "You can claim your rewards only once per day");
-        require(rewardPool() >= rewards, "There are not enough PUMPY tokens to pay rewards");
+        if (userInfo[msg.sender].nftId == 0) 
+            revert ClaimStakeNFT();
+        
+        if (block.timestamp <= userInfo[msg.sender].lastAction)
+            revert ClaimLastAction();
 
-        if (isCompound == true) {
-            userInfo[msg.sender].depositAmount += rewards;
-            totalStakes += rewards;
-
-        } else {
-            pumpy.transfer(msg.sender, rewards);
-            userInfo[msg.sender].totalRewards += rewards;
-            
-        }
+        if (rewardPool() < rewards)
+            revert ClaimRewardPool(rewardPool(), rewards);
 
         totalRewardsGiven += rewards;
         userInfo[msg.sender].lastAction = block.timestamp;
 
-        emit Claim(msg.sender, nftId, rewards);
+        emit Claim(msg.sender, nftId, rewards, isCompound);
+
+        if (isCompound == true) {
+            userInfo[msg.sender].depositAmount += rewards;
+            totalStakes += rewards;
+        } else {
+            pumpy.transfer(msg.sender, rewards);
+            userInfo[msg.sender].totalRewards += rewards;   
+        }
     }
 
     function withdraw() external {
