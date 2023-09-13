@@ -4,11 +4,12 @@ pragma solidity 0.8.21;
 import {IERC20} from "openzeppelin/token/ERC20/IERC20.sol";
 import {IERC721} from "openzeppelin/token/ERC721/IERC721.sol";
 import "openzeppelin/token/ERC721/IERC721Receiver.sol";
+import "openzeppelin/security/ReentrancyGuard.sol";
 import "./interfaces/IPumpyStaking.sol";
 import "./Pumpy.sol";
 import "./PumpyNFT.sol";
 
-contract PumpyStaking is IPumpyStaking, IERC721Receiver {
+contract PumpyStaking is IPumpyStaking, IERC721Receiver, ReentrancyGuard {
     PUMPY public pumpy;
     PumpyNFT public nft;
 
@@ -26,7 +27,7 @@ contract PumpyStaking is IPumpyStaking, IERC721Receiver {
         nft = PumpyNFT(_nft);
     }
 
-    function onERC721Received(
+    function onERC721Received (
         address operator,
         address from,
         uint256 tokenId,
@@ -36,7 +37,7 @@ contract PumpyStaking is IPumpyStaking, IERC721Receiver {
         return this.onERC721Received.selector;
     }
 
-    function deposit(uint256 nftId, uint256 amount) external {
+    function deposit(uint256 nftId, uint256 amount) external nonReentrant {
         if (amount <= 0)
             revert DepositAmount();
         
