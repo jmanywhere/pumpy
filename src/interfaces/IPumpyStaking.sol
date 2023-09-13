@@ -17,6 +17,12 @@ interface IPumpyStaking {
     // Events
     //-------------------------------------------------------------------------
 
+    event NFTReceived(
+        address operator,
+        address from,
+        uint256 tokenId,
+        bytes data)
+    ;
     event Deposit(
         address indexed user,
         uint256 indexed nftId,
@@ -28,6 +34,14 @@ interface IPumpyStaking {
         uint256 indexed nftId,
         uint256 rewardAmount
     );
+
+    //-------------------------------------------------------------------------
+    // Errors
+    //-------------------------------------------------------------------------
+
+    error DepositAmount();
+    error DepositOwnerNFT(address owner, address sender);
+    error DepositSameNFT();
 
     //-------------------------------------------------------------------------
     // Interface Functions

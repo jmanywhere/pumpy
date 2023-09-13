@@ -183,7 +183,7 @@ contract StakingTest is Test {
         // assertEq(staking.rewardPool(), 300 ether);
         
         // Testing state variables
-        assertEq(staking.totalStakes(), 333 ether);
+        assertEq(staking.totalStakes(), 330 ether);
 
     //     //TBD
     //     // value 0x1 = binary 0001;

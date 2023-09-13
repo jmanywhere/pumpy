@@ -3,11 +3,12 @@ pragma solidity 0.8.21;
 
 import {IERC20} from "openzeppelin/token/ERC20/IERC20.sol";
 import {IERC721} from "openzeppelin/token/ERC721/IERC721.sol";
+import "openzeppelin/token/ERC721/IERC721Receiver.sol";
 import "./interfaces/IPumpyStaking.sol";
 import "./Pumpy.sol";
 import "./PumpyNFT.sol";
 
-contract PumpyStaking is IPumpyStaking {
+contract PumpyStaking is IPumpyStaking, IERC721Receiver {
     PUMPY public pumpy;
     PumpyNFT public nft;
 
@@ -25,16 +26,28 @@ contract PumpyStaking is IPumpyStaking {
         nft = PumpyNFT(_nft);
     }
 
+    function onERC721Received(
+        address operator,
+        address from,
+        uint256 tokenId,
+        bytes memory data
+    ) public override returns (bytes4) {
+        emit NFTReceived(operator, from, tokenId, data);
+        return this.onERC721Received.selector;
+    }
+
     function deposit(uint256 nftId, uint256 amount) external {
-        require(amount > 0, "You need to stake at least some tokens");
+        if (amount <= 0)
+            revert DepositAmount();
         
         if (userInfo[msg.sender].nftId == 0) {
-            require(nft.ownerOf(nftId) == msg.sender, "You are not the owner of the NFT");
-            nft.transferFrom(msg.sender, address(this), nftId);
+            if (nft.ownerOf(nftId) != msg.sender)
+                revert DepositOwnerNFT(nft.ownerOf(nftId), msg.sender);
+            nft.safeTransferFrom(msg.sender, address(this), nftId);
         } else {
-            require(userInfo[msg.sender].nftId == nftId, "You need to stake the same NFT");
-            // @jmanywhere is it going to be always compound for multiple deposits ?
-            claimRewards(true);
+            if (userInfo[msg.sender].nftId != nftId)
+                revert DepositSameNFT();
+            claimRewards(false);
         }
 
         // Transfer toknes to the stake contract
