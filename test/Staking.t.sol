@@ -15,10 +15,6 @@ contract StakingTest is Test {
     address user2 = makeAddr("user2");
     address user3 = makeAddr("user3");
 
-    // function getUserDepositAmount(address user) external view returns (uint256) {
-    //     return staking.userInfo[user].depositAmount;
-    // }
-
     function getDepositAmount(address user) public view returns (uint256) {
         (uint256 depositAmount, , , , ) = staking.userInfo(user);
         return depositAmount;
