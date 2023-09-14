@@ -143,6 +143,7 @@ contract StakingTest is Test {
         
         // 3 days later...
         vm.warp(block.timestamp + 3 days);
+        assertEq(staking.rewardsPerSecond(), 18_518_518_518_518_4 ether);
 
         // Second deposit by user3
         vm.prank(user3);

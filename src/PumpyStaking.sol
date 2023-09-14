@@ -16,11 +16,14 @@ contract PumpyStaking is IPumpyStaking, IERC721Receiver, ReentrancyGuard {
     // State variables
     uint256 public totalStakes;
     uint256 public totalRewardsGiven;
+    uint256 public rewardsPerSecond;
+
     // uint256 public lastUpdated; // Timestamp of the last time the reward pool was updated    
     
     mapping(address _user => StakingInfo) public userInfo;
     uint256 private constant _BASE_PERCENT = 1000;
-
+    uint private constant MAGNIFIER = 1e18;
+    
     constructor(address _pumpy, address _nft) {
         pumpy = PUMPY(_pumpy);
         nft = PumpyNFT(_nft);
@@ -35,6 +38,12 @@ contract PumpyStaking is IPumpyStaking, IERC721Receiver, ReentrancyGuard {
         emit NFTReceived(operator, from, tokenId, data);
         return this.onERC721Received.selector;
     }
+
+    function calculateRewardsPerSecond (uint256 nftId) internal {
+        uint256 pumpRet = nft.pumpRet(nft.tokenType(nftId));
+        uint256 dailyRewards = (userInfo[msg.sender].depositAmount * pumpRet) / _BASE_PERCENT;
+        rewardsPerSecond += (dailyRewards / 1 days) * MAGNIFIER;
+    }       
 
     function deposit(uint256 nftId, uint256 amount) external nonReentrant {
         if (amount <= 0)
@@ -57,6 +66,7 @@ contract PumpyStaking is IPumpyStaking, IERC721Receiver, ReentrancyGuard {
         userInfo[msg.sender].lastAction = block.timestamp;
         userInfo[msg.sender].depositAmount += amount;
         totalStakes += amount;
+        calculateRewardsPerSecond(nftId);
 
         emit Deposit(msg.sender, nftId, amount);
     }
@@ -120,4 +130,6 @@ contract PumpyStaking is IPumpyStaking, IERC721Receiver, ReentrancyGuard {
     function rewardPool() public view returns (uint256) {
         return pumpy.balanceOf(address(this)) - totalStakes;
     }
+
+ 
 }
