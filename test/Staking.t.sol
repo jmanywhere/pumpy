@@ -11,21 +11,23 @@ contract StakingTest is Test {
     PumpyNFT public nft;
     PumpyStaking public staking;
 
-    address user1 = makeAddr("user1");
-    address user2 = makeAddr("user2");
-    address user3 = makeAddr("user3");
+    address user1;
+    address user2;
+    address user3;   
 
     function getDepositAmount(address user) public view returns (uint256) {
         (uint256 depositAmount, , , , ) = staking.userInfo(user);
         return depositAmount;
     }
 
-
     function setUp() public {
 
-        //
-        // VALUES 
-        //
+        // Users
+        user1 = makeAddr("user1");
+        user2 = makeAddr("user2");
+        user3 = makeAddr("user3");        
+
+        // NFTs pool
         uint[] memory values = new uint[](11);
         values[
             0
@@ -58,53 +60,42 @@ contract StakingTest is Test {
             9
         ] = 0x1212336222143213122312152212152233411112111122214421116411325225;
         values[10] = 0x32;
-        // END VALUES
-        // Old values
-        uint256[] memory ids = new uint256[](1);
-        ids[0] = 0x112233;
 
         // Instantiate contracts
         pumpy = new PUMPY();
         nft = new PumpyNFT(values, address(pumpy));
         staking = new PumpyStaking(address(pumpy), address(nft));
 
-        pumpy.transfer(address(staking), 100 ether);
-        
+        // Set up initial state
         nft.setNFTPrice(1 ether);
+        pumpy.transfer(address(staking), 100 ether);        
         pumpy.transfer(user1, 500 ether);
         pumpy.transfer(user2, 500 ether);
-        pumpy.transfer(user3, 500 ether);        
-        vm.prank(user1);
-        pumpy.approve(address(nft), 500 ether);
-        vm.prank(user2);
-        pumpy.approve(address(nft), 500 ether);       
-        vm.prank(user3);
-        pumpy.approve(address(nft), 500 ether);  
+        pumpy.transfer(user3, 500 ether);
 
-        vm.prank(user1);
-        nft.mint(12);        
-        vm.prank(user1);
+        // Set up user1
+        vm.startPrank(user1);
+        pumpy.approve(address(nft), 500 ether);        
+        nft.mint(12);
         nft.setApprovalForAll(address(staking), true);
-        vm.prank(user2);
+        pumpy.approve(address(staking), 500 ether);
+        vm.stopPrank();
+
+        // Set up user2
+        vm.startPrank(user2);
+        pumpy.approve(address(nft), 500 ether);        
         nft.mint(48);
-        vm.prank(user3);
-        nft.mint(6);        
-        vm.prank(user1);
         nft.setApprovalForAll(address(staking), true);
-        vm.prank(user2);
-        nft.setApprovalForAll(address(staking), true);        
-        vm.prank(user3);
+        pumpy.approve(address(staking), 500 ether);
+        vm.stopPrank();        
+
+        // Set up user3
+        vm.startPrank(user3);
+        pumpy.approve(address(nft), 500 ether);   
+        nft.mint(6);        
         nft.setApprovalForAll(address(staking), true);              
-        // vm.prank(user1);
-        // nft.approve(address(staking), 2);
-        vm.prank(user1);
         pumpy.approve(address(staking), 500 ether);
-        vm.prank(user2);
-        pumpy.approve(address(staking), 500 ether);
-        vm.prank(user3);
-        pumpy.approve(address(staking), 500 ether);        
-        // vm.prank(user1);
-        // staking.deposit(1, 2 ether);
+        vm.stopPrank();        
         
     }
 
