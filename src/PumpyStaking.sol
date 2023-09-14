@@ -39,12 +39,15 @@ contract PumpyStaking is IPumpyStaking, IERC721Receiver, ReentrancyGuard {
         return this.onERC721Received.selector;
     }
 
-    function calculateRewardsPerSecond () internal {
-        uint256 dailyRewards = (userInfo[msg.sender].depositAmount * userInfo[msg.sender].nftRoi) / _BASE_PERCENT;
+    function calculateRewardsPerSecond (uint256 amount) internal {
+        uint256 dailyRewards = (amount * userInfo[msg.sender].nftRoi) / _BASE_PERCENT;
         rewardsPerSecond += (dailyRewards / 1 days) * MAGNIFIER;
     }
 
     function deposit(uint256 nftId, uint256 amount) external nonReentrant {
+
+        uint256 depositDiff;
+
         userInfo[msg.sender].nftRoi = nft.pumpRet(nft.tokenType(nftId));
         if (amount <= 0)
             revert DepositAmount();
@@ -64,9 +67,10 @@ contract PumpyStaking is IPumpyStaking, IERC721Receiver, ReentrancyGuard {
 
         userInfo[msg.sender].nftId = nftId;
         userInfo[msg.sender].lastAction = block.timestamp;
+        // depositDiff = amount - userInfo[msg.sender].depositAmount;
         userInfo[msg.sender].depositAmount += amount;
         totalStakes += amount;
-        calculateRewardsPerSecond();
+        calculateRewardsPerSecond(amount);
 
         emit Deposit(msg.sender, nftId, amount);
     }
@@ -94,10 +98,12 @@ contract PumpyStaking is IPumpyStaking, IERC721Receiver, ReentrancyGuard {
         if (isCompound == true) {
             userInfo[msg.sender].depositAmount += rewards;
             totalStakes += rewards;
+            calculateRewardsPerSecond(rewards);
         } else {
             pumpy.transfer(msg.sender, rewards);
-            userInfo[msg.sender].totalRewards += rewards;   
+            userInfo[msg.sender].totalRewards += rewards;
         }
+        
     }
 
     function withdraw() external {
@@ -119,6 +125,9 @@ contract PumpyStaking is IPumpyStaking, IERC721Receiver, ReentrancyGuard {
         // Transfers
         pumpy.transfer(msg.sender, amountToWithdraw);
         nft.transferFrom(address(this), msg.sender, nftId);
+
+        uint256 dailyRewards = (amountToWithdraw * userInfo[msg.sender].nftRoi) / _BASE_PERCENT;
+        rewardsPerSecond -= (dailyRewards / 1 days) * MAGNIFIER; 
     }
 
     function estimatedEndTime() external view returns (uint256) {

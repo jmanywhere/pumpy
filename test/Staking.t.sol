@@ -117,6 +117,7 @@ contract StakingTest is Test {
     }
 
     function test_estimatedEndTime() public {
+                  
         // Make deposits
         vm.prank(user1);
         staking.deposit(12, 100 ether);
@@ -130,6 +131,43 @@ contract StakingTest is Test {
         // It'd take 6.25 days to deplete the reward pool = 540_000 seconds
         assertEq(staking.rewardsPerSecond(), 18_518_518_518_518_4 ether); // rewardsPerSecond * MAGNIFIER
         assertEq(staking.estimatedEndTime(), 540_001); // 540_000 + block.timestamp (1)
+
+        // 3 days later
+        vm.warp(block.timestamp + 3 days);
+        assertEq(staking.rewardsPerSecond(), 18_518_518_518_518_4 ether); // rewardsPerSecond * MAGNIFIER
+        vm.prank(user2);
+        staking.deposit(60, 200 ether); // claims 30 tokens
+        assertEq(getDepositAmount(user2), 400 ether);
+        // rewardPool = 70 tokens
+        assertEq(staking.rewardPool(),  70 ether);
+        assertEq(staking.rewardsPerSecond(), 300_925_925_925_924 ether); // rewardsPerSecond * MAGNIFIER
+        // assertEq(staking.estimatedEndTime(), 540_001); // 540_000 + block.timestamp (1)
+
+        // 2 days later
+        vm.warp(block.timestamp + 2 days);
+        vm.prank(user2);
+        staking.claimRewards(true); // claims and restakes 40 rewards (20 tokens/day * 2 days)
+        // rewardPool = 30 tokens
+        assertEq(staking.rewardPool(),  30 ether);
+        assertEq(getDepositAmount(user2), 440 ether);
+        pumpy.transfer(address(staking), 110 ether); // Injeting funds to rewardPool to make it to 140 tokens           
+        // dailyRewards = 28 tokens: user1 gets 5 tokens; user2 gets 22 tokens; user3 gets 1 tokens
+        // It'd take 5 days to deplete the reward pool = 432_000 seconds
+        assertEq(staking.totalStakes(), 590 ether);
+        assertEq(staking.rewardsPerSecond(), 324_074_074_074_072 ether); // rewardsPerSecond * MAGNIFIER
+        assertEq(staking.estimatedEndTime(), (432_000 + block.timestamp));
+
+        vm.prank(user1);
+        // 5 days since its only deposit; has earned 5 rewards daily = 25 rewards
+        staking.withdraw(); // Claims 25 rewards
+        assertEq(staking.totalStakes(), 490 ether);
+        assertEq(staking.rewardPool(), 115 ether); // 140 - 25
+        // rewardPool = 115 tokens        
+        // dailyRewards = 23 tokens: user1 gets 0 tokens; user2 gets 22 tokens; user3 gets 1 tokens
+        // It'd take 5 days to deplete the reward pool = 432_000 seconds
+        assertEq(staking.rewardsPerSecond(), 266_203_703_703_702 ether); // rewardsPerSecond * MAGNIFIER    
+        assertEq(staking.estimatedEndTime(), (432_000 + block.timestamp));           
+
     }
 
     function test_deposit() public {
@@ -179,7 +217,7 @@ contract StakingTest is Test {
 
         // claimRewards (compound)
         vm.prank(user2);
-        staking.claimRewards(true); // claims 30 rewards: 10 tokens/day * 3 days
+        staking.claimRewards(true); // claims 30 rewards: 10 tokens/day * 3 days, and restakes
         
         assertEq(getDepositAmount(user2), 230 ether);
         assertEq(staking.totalRewardsGiven(), 48 ether);
