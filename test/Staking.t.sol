@@ -20,6 +20,11 @@ contract StakingTest is Test {
         return depositAmount;
     }
 
+    function getTotalRewards(address user) public view returns (uint256) {
+        (, , , , uint256 totalRewards) = staking.userInfo(user);
+        return totalRewards;
+    }    
+
     function setUp() public {
 
         // Users
@@ -61,6 +66,14 @@ contract StakingTest is Test {
         ] = 0x1212336222143213122312152212152233411112111122214421116411325225;
         values[10] = 0x32;
 
+    //     //TBD
+    //     // value 0x1 = binary 0001;
+    //     // value 0x2 = binary 0010
+    //     // value 0x3 = binary 0011
+    //     // value 0xf = binary 1111
+    //     // 0x12 & 0xf = 0x02
+    //     // 0x12 >> 4 = 00010010 >> 4 = 00000001 = 0x01                
+
         // Instantiate contracts
         pumpy = new PUMPY();
         nft = new PumpyNFT(values, address(pumpy));
@@ -99,88 +112,91 @@ contract StakingTest is Test {
         
     }
 
-    // WILL REFACTOR INTO MULTIPLE FUNCTIONS
-    function test_deposit() public {
-
-        assertEq(nft.ownerOf(1), user1);
-        assertEq(nft.ownerOf(2), user1);
-        assertEq(nft.balanceOf(user1), 12);
-        assertEq(nft.totalSupply(), 66);
-        assertEq(nft.tokenType(1), 2);
-        assertEq(nft.tokenType(2), 3);
-        assertEq(nft.tokenType(12), 6);
-        assertEq(nft.tokenType(60), 6);        
-
-        assertEq(staking.totalStakes(), 0 ether);
+    function test_rewardPool() public {
         assertEq(staking.rewardPool(), 100 ether);
+    }
 
-        // Deposit
+    function test_estimatedEndTime() public {
+        // Make deposits
         vm.prank(user1);
         staking.deposit(12, 100 ether);
         vm.prank(user2);
         staking.deposit(60, 200 ether);
         vm.prank(user3);
-        staking.deposit(61, 50 ether);        
+        staking.deposit(61, 50 ether);
 
-        assertEq(staking.totalStakes(), 350 ether);
-        assertEq(staking.rewardPool(), 100 ether);
-        assertEq(nft.ownerOf(12), address(staking));
+        // rewardPool = 100 tokens
+        // dailyRewards = 16 tokens: user1 gets 5 tokens; user2 gets 10 tokens; user3 gets 1 tokens
+        // It'd take 6.25 days to deplete the reward pool = 540_000 seconds
+        assertEq(staking.rewardsPerSecond(), 18_518_518_518_518_4 ether); // rewardsPerSecond * MAGNIFIER
+        assertEq(staking.estimatedEndTime(), 540_001); // 540_000 + block.timestamp (1)
+    }
+
+    function test_deposit() public {
+        // Make deposits
+        vm.prank(user1);
+        staking.deposit(12, 100 ether);
+        vm.prank(user2);
+        staking.deposit(60, 200 ether);
+        vm.prank(user3);
+        staking.deposit(61, 50 ether);
 
         assertEq(getDepositAmount(user1), 100 ether);
+        assertEq(getDepositAmount(user2), 200 ether);
+        assertEq(getDepositAmount(user3), 50 ether);
 
+        assertEq(nft.ownerOf(12), address(staking));
         assertEq(nft.ownerOf(60), address(staking));
-        
-        assertEq(getDepositAmount(user2), 200 ether);
+        assertEq(nft.ownerOf(61), address(staking));
 
-        // estimatedEndTime
-        assertEq(staking.estimatedEndTime(), 540_001);
-        
-        // 3 days later...
+        assertEq(staking.totalStakes(), 350 ether);
+
+        // 3 days later
         vm.warp(block.timestamp + 3 days);
-        assertEq(staking.rewardsPerSecond(), 18_518_518_518_518_4 ether);
-
-        // Second deposit by user3
         vm.prank(user3);
-        staking.deposit(61, 50 ether); // claims with compound 3 rewards
-        // assertEq(getDepositAmount(user3), 100 ether);
+        staking.deposit(61, 50 ether); // Second deposit & claims with compound 3 tokens (1 token/day)
+
+        assertEq(getTotalRewards(user3), 3 ether);
+        assertEq(staking.totalRewardsGiven(), 3 ether);
+        assertEq(staking.rewardPool(),  97 ether); // initial reward pool (100) - 3 tokens
+        assertEq(staking.totalStakes(), 400 ether);
         
-        // claimRewards (single)
-        assertEq(pumpy.balanceOf(user1), 388 ether);
+        // assertEq(getDepositAmount(user3), 53 ether);
+        // shoult it work since initial deposit (50) + implicit deposit (3 tokens)?
+    }
+
+    function test_claimRewards() public {
+        test_deposit();
+
+        // claimRewards (simple)
         vm.prank(user1);
-        staking.claimRewards(false); // Claims 15 rewards
-        // vm.prank(user1); staking.claimRewards(false); // verify cannot claim twice in same day
+        staking.claimRewards(false); // claims 15 rewards: 5 tokens/day * 3 days
+        // vm.prank(user1); staking.claimRewards(false); // verified cannot claim twice in same day
 
+        assertEq(getTotalRewards(user1), 15 ether);
         assertEq(staking.totalRewardsGiven(), 18 ether);
-        assertEq(pumpy.balanceOf(user1), 403 ether);
-        assertEq(staking.rewardPool(),  82 ether);
+        assertEq(staking.rewardPool(), 82 ether);
 
-        // Compound claimRewards
+        // claimRewards (compound)
         vm.prank(user2);
-        assertEq(getDepositAmount(user2), 200 ether);
+        staking.claimRewards(true); // claims 30 rewards: 10 tokens/day * 3 days
         
-        vm.prank(user2);
-        staking.claimRewards(true);
         assertEq(getDepositAmount(user2), 230 ether);
         assertEq(staking.totalRewardsGiven(), 48 ether);
-        // assertEq(staking.rewardPool(), 300 ether);
+        assertEq(staking.rewardPool(), 52 ether);
+        assertEq(staking.totalStakes(), 430 ether);
 
-        // Test withdraw
+    }    
+    function test_withdraw () public {
+
+        test_claimRewards();
+        
         vm.warp(block.timestamp + 2 days);
         vm.prank(user1);
-        staking.withdraw();
+        staking.withdraw(); // claims 10 rewards: 5 tokens/day * 2 days
+
         assertEq(getDepositAmount(user1), 0 ether);
-
-        // assertEq(staking.rewardPool(), 300 ether);
-        
-        // Testing state variables
+        assertEq(staking.rewardPool(), 42 ether);
         assertEq(staking.totalStakes(), 330 ether);
-
-    //     //TBD
-    //     // value 0x1 = binary 0001;
-    //     // value 0x2 = binary 0010
-    //     // value 0x3 = binary 0011
-    //     // value 0xf = binary 1111
-    //     // 0x12 & 0xf = 0x02
-    //     // 0x12 >> 4 = 00010010 >> 4 = 00000001 = 0x01
     }
 }

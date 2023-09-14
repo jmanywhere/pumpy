@@ -42,7 +42,6 @@ contract PumpyStaking is IPumpyStaking, IERC721Receiver, ReentrancyGuard {
     function calculateRewardsPerSecond () internal {
         uint256 dailyRewards = (userInfo[msg.sender].depositAmount * userInfo[msg.sender].nftRoi) / _BASE_PERCENT;
         rewardsPerSecond += (dailyRewards / 1 days) * MAGNIFIER;
-        
     }
 
     function deposit(uint256 nftId, uint256 amount) external nonReentrant {
