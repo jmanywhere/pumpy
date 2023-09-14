@@ -68,7 +68,7 @@ contract StakingTest is Test {
         nft = new PumpyNFT(values, address(pumpy));
         staking = new PumpyStaking(address(pumpy), address(nft));
 
-        pumpy.transfer(address(staking), 1_000_000 ether);
+        pumpy.transfer(address(staking), 100 ether);
         
         nft.setNFTPrice(1 ether);
         pumpy.transfer(user1, 500 ether);
@@ -121,7 +121,7 @@ contract StakingTest is Test {
         assertEq(nft.tokenType(60), 6);        
 
         assertEq(staking.totalStakes(), 0 ether);
-        assertEq(staking.rewardPool(), 1_000_000 ether);
+        assertEq(staking.rewardPool(), 100 ether);
 
         // Deposit
         vm.prank(user1);
@@ -132,7 +132,7 @@ contract StakingTest is Test {
         staking.deposit(61, 50 ether);        
 
         assertEq(staking.totalStakes(), 350 ether);
-        assertEq(staking.rewardPool(), 1_000_000 ether);
+        assertEq(staking.rewardPool(), 100 ether);
         assertEq(nft.ownerOf(12), address(staking));
 
         assertEq(getDepositAmount(user1), 100 ether);
@@ -140,6 +140,9 @@ contract StakingTest is Test {
         assertEq(nft.ownerOf(60), address(staking));
         
         assertEq(getDepositAmount(user2), 200 ether);
+
+        // estimatedEndTime
+        assertEq(staking.estimatedEndTime(), 540_001);
         
         // 3 days later...
         vm.warp(block.timestamp + 3 days);
@@ -158,7 +161,7 @@ contract StakingTest is Test {
 
         assertEq(staking.totalRewardsGiven(), 18 ether);
         assertEq(pumpy.balanceOf(user1), 403 ether);
-        assertEq(staking.rewardPool(),  999_982 ether);
+        assertEq(staking.rewardPool(),  82 ether);
 
         // Compound claimRewards
         vm.prank(user2);
@@ -175,7 +178,6 @@ contract StakingTest is Test {
         vm.prank(user1);
         staking.withdraw();
         assertEq(getDepositAmount(user1), 0 ether);
-
 
         // assertEq(staking.rewardPool(), 300 ether);
         
