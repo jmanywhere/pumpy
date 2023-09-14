@@ -16,11 +16,14 @@ contract PumpyStaking is IPumpyStaking, IERC721Receiver, ReentrancyGuard {
     // State variables
     uint256 public totalStakes;
     uint256 public totalRewardsGiven;
+    uint256 public rewardsPerSecond;
+
     // uint256 public lastUpdated; // Timestamp of the last time the reward pool was updated    
     
     mapping(address _user => StakingInfo) public userInfo;
     uint256 private constant _BASE_PERCENT = 1000;
-
+    uint private constant MAGNIFIER = 1e18;
+    
     constructor(address _pumpy, address _nft) {
         pumpy = PUMPY(_pumpy);
         nft = PumpyNFT(_nft);
@@ -36,7 +39,21 @@ contract PumpyStaking is IPumpyStaking, IERC721Receiver, ReentrancyGuard {
         return this.onERC721Received.selector;
     }
 
+    function calculateRewardsPerSecond (uint256 amount, bool isWithdraw) internal {
+        uint256 dailyRewards = (amount * userInfo[msg.sender].nftRoi) / _BASE_PERCENT;
+        if (isWithdraw) {
+            rewardsPerSecond -= (dailyRewards / 1 days) * MAGNIFIER;
+        } else {
+            rewardsPerSecond += (dailyRewards / 1 days) * MAGNIFIER;
+        }
+
+    }
+
     function deposit(uint256 nftId, uint256 amount) external nonReentrant {
+
+        uint256 depositDiff;
+
+        userInfo[msg.sender].nftRoi = nft.pumpRet(nft.tokenType(nftId));
         if (amount <= 0)
             revert DepositAmount();
         
@@ -55,17 +72,18 @@ contract PumpyStaking is IPumpyStaking, IERC721Receiver, ReentrancyGuard {
 
         userInfo[msg.sender].nftId = nftId;
         userInfo[msg.sender].lastAction = block.timestamp;
+        // depositDiff = amount - userInfo[msg.sender].depositAmount;
         userInfo[msg.sender].depositAmount += amount;
         totalStakes += amount;
+        calculateRewardsPerSecond (amount, false);
 
         emit Deposit(msg.sender, nftId, amount);
     }
 
     function claimRewards(bool isCompound) public {
         uint256 nftId = userInfo[msg.sender].nftId;
-        uint256 pumpRet = nft.pumpRet(nft.tokenType(nftId));
         uint256 timeElapsed = block.timestamp - userInfo[msg.sender].lastAction;
-        uint256 dailyRewards = (userInfo[msg.sender].depositAmount * pumpRet) / _BASE_PERCENT;
+        uint256 dailyRewards = (userInfo[msg.sender].depositAmount * userInfo[msg.sender].nftRoi) / _BASE_PERCENT;
         uint256 rewards = (dailyRewards * timeElapsed) / 1 days;
 
         if (userInfo[msg.sender].nftId == 0) 
@@ -85,10 +103,12 @@ contract PumpyStaking is IPumpyStaking, IERC721Receiver, ReentrancyGuard {
         if (isCompound == true) {
             userInfo[msg.sender].depositAmount += rewards;
             totalStakes += rewards;
+            calculateRewardsPerSecond (rewards, false);
         } else {
             pumpy.transfer(msg.sender, rewards);
-            userInfo[msg.sender].totalRewards += rewards;   
+            userInfo[msg.sender].totalRewards += rewards;
         }
+        
     }
 
     function withdraw() external {
@@ -110,14 +130,17 @@ contract PumpyStaking is IPumpyStaking, IERC721Receiver, ReentrancyGuard {
         // Transfers
         pumpy.transfer(msg.sender, amountToWithdraw);
         nft.transferFrom(address(this), msg.sender, nftId);
+
+        calculateRewardsPerSecond (amountToWithdraw, true);
     }
 
-    function estimatedEndTime() external pure returns (uint256) {
-        // TODO: Implement function logic
-        return 0;  // Placeholder return
+    function estimatedEndTime() external view returns (uint256) {
+        uint256 endTime = block.timestamp + (rewardPool() * MAGNIFIER / rewardsPerSecond);
+        return endTime;
     }
 
     function rewardPool() public view returns (uint256) {
         return pumpy.balanceOf(address(this)) - totalStakes;
     }
+ 
 }
