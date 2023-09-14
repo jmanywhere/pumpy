@@ -139,9 +139,9 @@ contract StakingTest is Test {
         staking.deposit(60, 200 ether); // claims 30 tokens
         assertEq(getDepositAmount(user2), 400 ether);
         // rewardPool = 70 tokens
+        // dailyRewards = 26 tokens: user1 gets 5 tokens; user2 gets 20 tokens; user3 gets 1 tokens
         assertEq(staking.rewardPool(),  70 ether);
         assertEq(staking.rewardsPerSecond(), 300_925_925_925_924 ether); // rewardsPerSecond * MAGNIFIER
-        // assertEq(staking.estimatedEndTime(), 540_001); // 540_000 + block.timestamp (1)
 
         // 2 days later
         vm.warp(block.timestamp + 2 days);
