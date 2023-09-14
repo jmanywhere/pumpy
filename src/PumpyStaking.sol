@@ -39,9 +39,14 @@ contract PumpyStaking is IPumpyStaking, IERC721Receiver, ReentrancyGuard {
         return this.onERC721Received.selector;
     }
 
-    function calculateRewardsPerSecond (uint256 amount) internal {
+    function calculateRewardsPerSecond (uint256 amount, bool isWithdraw) internal {
         uint256 dailyRewards = (amount * userInfo[msg.sender].nftRoi) / _BASE_PERCENT;
-        rewardsPerSecond += (dailyRewards / 1 days) * MAGNIFIER;
+        if (isWithdraw) {
+            rewardsPerSecond -= (dailyRewards / 1 days) * MAGNIFIER;
+        } else {
+            rewardsPerSecond += (dailyRewards / 1 days) * MAGNIFIER;
+        }
+
     }
 
     function deposit(uint256 nftId, uint256 amount) external nonReentrant {
@@ -70,7 +75,7 @@ contract PumpyStaking is IPumpyStaking, IERC721Receiver, ReentrancyGuard {
         // depositDiff = amount - userInfo[msg.sender].depositAmount;
         userInfo[msg.sender].depositAmount += amount;
         totalStakes += amount;
-        calculateRewardsPerSecond(amount);
+        calculateRewardsPerSecond (amount, false);
 
         emit Deposit(msg.sender, nftId, amount);
     }
@@ -98,7 +103,7 @@ contract PumpyStaking is IPumpyStaking, IERC721Receiver, ReentrancyGuard {
         if (isCompound == true) {
             userInfo[msg.sender].depositAmount += rewards;
             totalStakes += rewards;
-            calculateRewardsPerSecond(rewards);
+            calculateRewardsPerSecond (rewards, false);
         } else {
             pumpy.transfer(msg.sender, rewards);
             userInfo[msg.sender].totalRewards += rewards;
@@ -126,8 +131,7 @@ contract PumpyStaking is IPumpyStaking, IERC721Receiver, ReentrancyGuard {
         pumpy.transfer(msg.sender, amountToWithdraw);
         nft.transferFrom(address(this), msg.sender, nftId);
 
-        uint256 dailyRewards = (amountToWithdraw * userInfo[msg.sender].nftRoi) / _BASE_PERCENT;
-        rewardsPerSecond -= (dailyRewards / 1 days) * MAGNIFIER; 
+        calculateRewardsPerSecond (amountToWithdraw, true);
     }
 
     function estimatedEndTime() external view returns (uint256) {
